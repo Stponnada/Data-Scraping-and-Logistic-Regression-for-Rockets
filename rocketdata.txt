@@ -1,0 +1,137 @@
+import pandas as pd
+#pandas is the library used to work with data in the form of tables or csv files
+import requests
+#requests is the library used to make http requests to websites. Needed for Data scraping from the internet
+import time
+#built in python library that lets us control time. Eg: to pause our program whenever needed
+
+def scrape_yearly_launches(start_year, end_year):
+#  scrape_yearly_data is a function that scrapes Wikipedia data for the given years: (From start_year to end_year)
+# this is a function that we have built that takes two input veriables.
+
+    all_launches = []
+    # Here, we are creating an empty list (which we will eventually fill) that will contain all data about our training set
+
+    for year in range(start_year, end_year + 1):
+    # this is a for loop. {year} is a variable that we are defining and range(): is an inbuilt python function.
+        url =  f"https://en.wikipedia.org/wiki/{year}_in_spaceflight#Orbital_launches"
+        # we are creating a variable called url. This is used as a placeholder for the url of the webpage that we will be scraping. f stands for formatted
+        print(f"Fetching data for {year} from: {url}")
+        #this print function is simply to give the user some information as to which specific year and webpage we are scraping at this particular moment in the program.
+        
+        try:
+
+        """"
+        #try is a keyword similar to for,if while etc. Its used for error handling to attempt something that has a high chance of failing. Is generally used as a pair with except, with except acting as a safety net if try crashes.
+            tables = pd.read_html(url)
+            #tables is a variable the we are defining and pd.read_html is a function that has been prebuilt in the pandas library used to scrape data
+            # pd.read_html takes a url as an input. In python, this input is called an argument.
+            #however, pd.read doesnt know which table on the page you want, so it scrapes data from all of them. The next most important part is to make sense of this data
+      """
+            
+            # THIS TRY FUNCTION DIDNT WORK SINCE WIKEPEDIA KEPT BLOCKING MY REQUESTS WITH ERROR 404 FORBIDDEN :(
+      
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                'AppleWebKit/537.36 (KHTML, like Gecko)'
+                'Chrome/58.0.3029.110 Safari/537.36'
+            }
+            # Headers is like an ID card that you have on the internet. Its a way of saying who you are on the internet. Typically a browser will have this hardcoded into itself.
+            #In our case we were making a http request, but we didnt have a valid id, so wikepedia denied entry. Now we will pretend to be chrome.
+            #The user agent string itself is quite nonsensical. Just that in the early days of the internet, webservers would sometimes showcase a better version of the website to the user, if they were on a better browser that could handle it.
+            # The first, most basic browser was mosiac. Then came netscape navigator(codenamed mozilla - mosiac killer("killa")) which was way better, so servers would specifically display websites better for people using netscape.
+            # Then came microsoft, who released internet explorer. They wanted to be treated better by webservers just like netscape, so they pretended to be netscape in their browser  and used the codename mozilla as well.
+            #fun fact: When microsoft released internet explorer for free, they killed netscape, which being a smaller company couldnt afford to provide the browser for free. In a last ditch effort, they opensourced netscape, creating a new open source organisation that they named the mozilla foundation, which wouldnt then rebuild the browser from scratch to give us firefox
+            #the new firefox was even better than IE or the old netscape browser, since mozilla created a rendering engine called gecko. Now webservers started looking for code word gecko as well to provide even better websites.
+            # then apple released their own webkit rendering engine which was even better than gecko. And they did the same thing as microsoft, the named their header (KHTML (which is what they used), like gecko(crucial that they used the keyword gecko for webservers to pick up on) Safari/125 (Safari was the real name of this webkit))
+            # then came the GOAT google, who used safari webkit to make Chrome. Their simple solution, pretend to be safari, hence the Chrome/0.2.149.27 Safari/525.13
+            
+            response = requests.get(url, headers=headers)
+            #when we said headers = {...}, we stored our header info into a variable(technically a dictionary), but this alone does absolutely nothing alone. I could declare a variable to be anything, like x = "pizza" and unless I actually use the variable, it doesnt do anything.
+            #this response line is the thing that actually equips us with the fake id card by asking the requests library(which is what is responsible for all http requests to put on this library while retreiving data)
+
+            response.raise_for_status() 
+            #this is like a secret agent we are planting to simply observe is the disguise has worked. If our requests does pass through into wikipedia, the response does nothing and allows the program to run. But if it fails, this is what will relay the information to us about the failure.
+
+            tables = pd.read_html(response.text)
+            #from here on out everything is the same as our older plan.
+            #the only difference is that pd.read_html is being made to operate where it is safe and cant screw up
+            #earlier we sent pdread directly yo wikepedia to try and scrape data, but since pdread is really primitive and doesnt know how to disguise itself with an id, it wasnt even let in. 
+            #so what we did was that we hired a professional (requets) to go into wikepedia in disguise, collect the data and then bring it into our program as response.text, where pdread can go through the data in the comfort of its own home.
+
+            launch_table = None
+            #this initializes a variable to be an empty placeholder. Its like defining a variable, but saying wait, we will give you a value later. The goal here is that there is a single table in the wikipedia site which contains the orbital launch data for that given year, and this is the variable we are going to assign to it.
+            #the larger for loop (which we created for the range of start and end years) will help us collect this table data for every year.
+            
+            for table in tables:
+                # The for loop is smart enough to understand that tables is a collection of data, perhaps some type of a list
+                # we assign the variable "table" to each item in this list (each individual table that pd read has scraped) one at a time each time the loop runs for(hence for loop) every table in tables.
+                    header_string = "".join(map(str, table.columns.values))
+                    #now, lets break this down step by step. Every time the for loop runs, it chooses one table in the larger tables list and does the following operation.
+                    #first off, what we need are the headers only for our table. By looking at the headers, we can try and predict if this table is the one that has the orbital launch data we need. Remember, we are looking for a single table in that wikipedia page for a given year. This is done by table.columns.values. This says take that table, and then give me the values of the column header.
+                    # the job of map(str,) is to take this header data and convert it into a string. This is extremely important, since if we dont convert every header into a string and numbers happen to show up, when we join them together, we end up with a mix of strings and numbers which will be insanely hard to seperate.
+                    #but if we create 13 to "13", when we run the column rejection algorithm, 13 will be treated as a string and will be rejected without crashing our program.
+                    # finally, the list of strings that we get from map will then be converted into a single long string using "".join, which is just a way of saying join everything that has "".
+                    if "Payload" in header_string and "Launch site" in header_string:
+                    #here, we are making an assumption. We assume that the testflights that are relevant to us will have some payload (which indicates that this is an orbital testflight and not say a static fire test where the rocket doesnt actually go up), or that this isnt some mission in space (like a deep space mission).Having info about the launch site which further confirms that we are infact dealing with a rocket launching up from earth, and not some satellite in space. 
+                    #a good way to verify this is to actually go to one of these webpages, say https://en.wikipedia.org/wiki/2024_in_spaceflight#Orbital_launches, and try to understand what the required table looks like in the first place.
+                        launch_table = table
+                        print(f"---> Found the orbital launch table for {year}.")
+                        #alert the user that the required data for that given year has been found
+                        break
+                        #this is a way of saying, test every string to look for the words payload and launch site. If they dont exist, do nothing and move on to the next table. If you find the right one, set this particular table as the launch table (which is what we want) and stop the algorithm right there.
+                if launch_table is not None:
+                #ie, if our search did find us a table that had both payload and launchsite data
+                    launch_table['Year'] = year
+                    # we are adding a column to the launch table that we found to keep a track of where it came from
+                    all_launches.append(launch_table)
+                    #take all the launch table data and append(combine) it into the single all_launches list which we created in the very beginning of this program.
+                else:
+                    print(f"---> Warning: Could not find the correct table for {year}.")
+                    #if the launch_table variable remains none aven after the search, that means the required data was not available in the given wikepedia page. Alert the user about this so that they can either exclude this or source the data manually if necessary.
+        
+                time.sleep(1)
+                # Dont be a moron. Dont overload wikipedia's webservers.
+            
+        
+        except Exception as e:
+            print(f"-->ERROR: Could not process {year}. Reason:{e}")
+            #this exception acts as a safety net for our "test" keyword acting as a safety net incase the test fails.
+
+    if not all_launches:
+    #this is just pythons way of saying, if the list all_launches is completely empty. Perhaps internet was down. Perhaps wikipedia is down. Perhaps wikipedia changed the format of every single one of their rocket launch data. 
+        print("No data was scraped. Exiting.")
+        #Whatever happened, let us know that it failed
+        return pd.DataFrame()
+        #pd.DataFrame had to return something, even if it was an empty table. So this allows that to ensure that the program doesnt crash.
+
+    #NOW IT IS TIME FOR THE MASTER ASSEMBLY. WE WILL TAKE ALL THE YEARS DATA AND CONCATENATE IT INTO A SINGLE TABLE
+    master_df = pd.concat(all_launches, ignore_index=True)
+    #first we give pdconcat which is the Pandas Concatenator the data of all of our launches. ignore index is a way of saying, ignore the index numbers in each table which might throw off the concatenator since they repeat for each table.
+    #masterdf is our master data frame that contains all the data we could collect
+
+    print("\nScraping complete!")
+    print(f"Successfully scraped and combined data for {len(all_launches)} years!")
+    #Success message that confirms that scraping was succesful!
+
+    return master_df
+    #return the master_df dataframe that contains all our data
+
+START_YEAR = 1990
+END_YEAR = 2023
+# Our original for loop that had range defined on a start and end year
+
+launch_data_raw = scrape_yearly_launches(START_YEAR, END_YEAR)
+#This is the final output of out scrape_yearly_launches function
+
+print("\n--- Initial DataFrame Info ---")
+print(launch_data_raw.info())
+#this prints a summary of the dataframe to the screen
+
+print("\n--- First 5 Rows of Raw Data ---")
+print(launch_data_raw.head())
+#this gives us a sneak peak into the data
+
+# AFTER RUNNING THIS CODE, WE FIND THAT WIKEPEDIA IS ACTIVELY BLOCKING OUR REQUESTS SINCE WE APPEAR TO BE A WEBSCRAPER BOT :)
+# HOWEVER WE CAN MODIFY THIS CODE

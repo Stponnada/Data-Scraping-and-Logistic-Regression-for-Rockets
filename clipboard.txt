@@ -1,0 +1,10 @@
+#an interesting thing to notice in this data is that for any row that has NaN in the operator and orbit, the entire row is empty. Such rows can be deleted.
+df_clean = df_clean.dropna(subset=['Operator','Outcome'])
+#drop rows with NaN (hence drop-na). But dont check all rows. Check only those with columns - operator and outcome as NaN
+
+print(" --- Data Frame info after this clean ---")
+df_clean.info()
+
+print("\n--- First 5 rows after consolidating ----")
+df_clean.reset_index(drop=True).head()
+#after the drop has been done, reset the index, since some lines have been deleted
